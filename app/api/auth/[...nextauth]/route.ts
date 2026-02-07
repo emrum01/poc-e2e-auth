@@ -61,3 +61,6 @@ export const authOptions: AuthOptions = {
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
+
+// Cloudflare Workers (Edge Runtime) で動作させる
+export const runtime = "edge";

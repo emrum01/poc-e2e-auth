@@ -18,10 +18,11 @@ LINE認証・Google認証のE2Eテストを GitHub Actions CI で実行する PO
 
 ## 技術スタック
 
-- **Web App**: Next.js 14 (App Router)
+- **Web App**: Next.js 16 (App Router)
 - **認証**: NextAuth.js (Google / LINE OAuth)
 - **E2E テスト**: Playwright
-- **CI**: GitHub Actions
+- **CI/CD**: GitHub Actions
+- **ホスティング**: Cloudflare Pages (@opennextjs/cloudflare)
 - **秘密情報管理**: Google Cloud KMS + Workload Identity Federation
 
 ## セットアップ
@@ -74,7 +75,24 @@ git commit -m "chore: add encrypted credentials"
 | `GCP_KMS_KEY` | KMS キー名 |
 | `GCP_KMS_LOCATION` | KMS ロケーション (例: `asia-northeast1`) |
 
-### 5. ローカル開発
+### 5. Cloudflare デプロイ設定
+
+GitHub Secrets に追加:
+
+| シークレット名 | 値 |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API トークン (Edit Workers権限) |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare アカウント ID |
+
+また、Cloudflare ダッシュボードで以下の環境変数(Secrets)を設定:
+
+```
+NEXTAUTH_SECRET, NEXTAUTH_URL,
+GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
+LINE_CLIENT_ID, LINE_CLIENT_SECRET
+```
+
+### 6. ローカル開発
 
 ```bash
 npm install
@@ -82,6 +100,9 @@ npx playwright install chromium
 
 # .env ファイルを設定した状態で
 npm run dev
+
+# Cloudflare ローカルプレビュー
+npm run build:cf && npm run preview:cf
 
 # E2E テスト実行
 npx playwright test

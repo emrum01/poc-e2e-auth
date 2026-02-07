@@ -9,7 +9,10 @@
     "start": "next start",
     "test:e2e": "playwright test",
     "test:e2e:google": "playwright test e2e/auth-google.spec.ts",
-    "test:e2e:line": "playwright test e2e/auth-line.spec.ts"
+    "test:e2e:line": "playwright test e2e/auth-line.spec.ts",
+    "build:cf": "npx @opennextjs/cloudflare build",
+    "preview:cf": "npx wrangler dev",
+    "deploy:cf": "npx wrangler deploy"
   },
   "repository": {
     "type": "git",
@@ -25,9 +28,11 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.16.3",
     "@playwright/test": "^1.58.2",
     "@types/node": "^25.2.1",
     "@types/react": "^19.2.13",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.63.0"
   }
 }

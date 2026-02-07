@@ -1,0 +1,19 @@
+{
+  "name": "poc-e2e-auth",
+  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_date": "2025-12-01",
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "main": ".open-next/worker.js",
+  // 環境変数は Cloudflare ダッシュボード または wrangler secret で設定
+  // wrangler secret put NEXTAUTH_SECRET
+  // wrangler secret put GOOGLE_CLIENT_ID
+  // wrangler secret put GOOGLE_CLIENT_SECRET
+  // wrangler secret put LINE_CLIENT_ID
+  // wrangler secret put LINE_CLIENT_SECRET
+  "vars": {
+    "NEXTAUTH_URL": "https://poc-e2e-auth.pages.dev"
+  }
+}
