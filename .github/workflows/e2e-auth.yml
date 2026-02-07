@@ -1,0 +1,109 @@
+name: E2E Authentication Tests
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Workload Identity Federation に必要な権限
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  e2e-auth-test:
+    name: E2E Auth Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      # Google Cloud 認証 (Workload Identity Federation)
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # KMS で認証情報を復号
+      - name: Decrypt credentials with KMS
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_KMS_KEYRING: ${{ secrets.GCP_KMS_KEYRING }}
+          GCP_KMS_KEY: ${{ secrets.GCP_KMS_KEY }}
+          GCP_KMS_LOCATION: ${{ secrets.GCP_KMS_LOCATION }}
+        run: ./scripts/decrypt-credentials.sh
+
+      # Next.js アプリをビルド＆起動
+      - name: Build Next.js app
+        run: npm run build
+
+      - name: Start Next.js app
+        run: npm run start &
+        env:
+          PORT: 3000
+
+      - name: Wait for app to be ready
+        run: |
+          echo "Waiting for app to start..."
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+              echo "App is ready!"
+              break
+            fi
+            echo "Attempt $i/30..."
+            sleep 2
+          done
+
+      # E2E テスト実行
+      - name: Run E2E Auth Tests (Google)
+        run: npx playwright test e2e/auth-google.spec.ts
+        env:
+          CI: true
+          BASE_URL: http://localhost:3000
+
+      - name: Run E2E Auth Tests (LINE)
+        run: npx playwright test e2e/auth-line.spec.ts
+        env:
+          CI: true
+          BASE_URL: http://localhost:3000
+
+      # テスト結果のアップロード
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 30
